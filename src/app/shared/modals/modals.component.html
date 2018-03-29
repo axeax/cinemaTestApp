@@ -1,15 +1,13 @@
 <div class="route-modal">
-  <div class="popup-inner">
-    <div class="popup-text mb-5">
-      {{data.name}}
+  <div class="mb-3 text-center">
+    {{data.name}}
+  </div>
+  <div class="text-center popup-btn-wrap">
+    <div *ngIf="data.status">
+      {{data.place}}
     </div>
-    <div class="text-center popup-btn-wrap">
-      <div *ngIf="data.status">
-        {{data.place}}
-      </div>
-      <button mat-raised-button (click)="close()" class="popup-btn">
-        ок
-      </button>
-    </div>
+    <button mat-raised-button (click)="close()" class="popup-btn">
+      ок
+    </button>
   </div>
 </div>

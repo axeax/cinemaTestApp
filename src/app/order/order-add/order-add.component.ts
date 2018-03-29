@@ -31,9 +31,9 @@ export class OrderAddComponent implements OnInit {
 
     this.cinemaForm = new FormGroup({
       sector: new FormControl([], Validators.required),
-      category: new FormControl([], Validators.required),
-      line: new FormControl([], Validators.required),
-      seat: new FormControl([], Validators.required)
+      category: new FormControl({value: '', disabled: true}, Validators.required),
+      line: new FormControl({value: '', disabled: true}, Validators.required),
+      seat: new FormControl({value: '', disabled: true}, Validators.required)
     });
 
   }
@@ -80,29 +80,30 @@ export class OrderAddComponent implements OnInit {
 
     this.cinemaForm.get('sector').valueChanges
       .do(sector => this.sector = sector)
-      .flatMap(() => this.service.getCategories(this.sector.category))
+      .flatMap(() => this.service.getFilteredSeatsBySector(this.sector.id))
+      .flatMap(() => this.service.getCategories())
       .subscribe(cat => {
-        this.categories = cat;
+        this.cinemaForm.get('category').enable();
         this.cinemaForm.get('category').reset([]);
-        console.log(this.categories);});
-
+        this.categories = cat;
+      });
 
     this.cinemaForm.get('category').valueChanges
       .do(cat => this.category = cat)
-      .flatMap(() => this.service.getLine(this.category.event, this.sector.event))
-      .subscribe(line => {
-        this.lines = line;
+      .flatMap(() => this.service.getLines(this.category.id))
+      .subscribe((lines) => {
+        this.cinemaForm.get('line').enable();
         this.cinemaForm.get('line').reset([]);
+        this.lines = lines;
         console.log(this.lines);
       });
 
     this.cinemaForm.get('line').valueChanges
       .do(line => this.line = line)
-      .flatMap(() => this.service.getSeats(this.line.id, this.category.id, this.sector.id))
-      .subscribe(seats => {
-        this.seats = seats;
+      .subscribe(() => {
+        this.seats = this.service.getSeats(this.line.id);
+        this.cinemaForm.get('seat').enable();
         this.cinemaForm.get('seat').reset([]);
-        console.log(this.seats);
       });
 
     this.cinemaForm.get('seat').valueChanges
@@ -110,6 +111,8 @@ export class OrderAddComponent implements OnInit {
         console.log(seat);
         this.seat = seat
       });
+
   }
+
 
 }

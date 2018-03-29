@@ -13,7 +13,7 @@
         </mat-form-field>
         <!--выбор категории-->
         <mat-form-field class="col-6 mb-3">
-          <mat-select formControlName="category" [disabled]="categories.length === 0" placeholder="Выбор категории">
+          <mat-select formControlName="category" placeholder="Выбор категории">
             <mat-option *ngFor="let category of categories" [value]="category">
              {{ category.about }}
             </mat-option>
@@ -21,7 +21,7 @@
         </mat-form-field>
         <!--ряд-->
         <mat-form-field class="col-6 mb-3">
-          <mat-select formControlName="line" [disabled]="lines.length === 0" placeholder="Выбор ряда">
+          <mat-select formControlName="line" placeholder="Выбор ряда">
             <mat-option *ngFor="let line of lines" [value]="line">
               {{ line.name }}
             </mat-option>
@@ -29,7 +29,7 @@
         </mat-form-field>
         <!--место-->
         <mat-form-field class="col-6 mb-3">
-          <mat-select formControlName="seat" [disabled]="seats.length === 0" placeholder="Выбор места">
+          <mat-select formControlName="seat" placeholder="Выбор места">
             <mat-option *ngFor="let seat of seats" [value]="seat">
               {{ seat.seat }}
             </mat-option>
