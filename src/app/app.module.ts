@@ -3,30 +3,21 @@ import { NgModule } from '@angular/core';
 import { SharedModule } from './shared/shared.module';
 import { AppRoutingModule } from './app-routing/app-routing.module';
 import { HttpClientModule } from '@angular/common/http';
-import { CommonModule } from '@angular/common';
-
 import { AppComponent } from './app.component';
-import { OrderComponent } from './order/order.component';
-import { OrderAddComponent } from './order/order-add/order-add.component';
 import { PlaceService } from './shared/place.service';
-import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {ModalsComponent} from './shared/modals/modals.component';
-
+import {OrderModule} from './order/order.module';
 
 @NgModule({
   declarations: [
     AppComponent,
-    OrderComponent,
-    OrderAddComponent,
     ModalsComponent
   ],
   imports: [
+    OrderModule,
     BrowserModule,
     SharedModule,
     HttpClientModule,
-    CommonModule,
-    FormsModule,
-    ReactiveFormsModule,
     AppRoutingModule
   ],
   entryComponents: [

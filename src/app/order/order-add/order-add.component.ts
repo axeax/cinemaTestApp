@@ -6,7 +6,7 @@ import { MatDialog } from '@angular/material';
 import 'rxjs/add/operator/mergeMap';
 import 'rxjs/add/operator/do';
 
-import {ModalsComponent} from "../../shared/modals/modals.component";
+import { ModalsComponent } from '../../shared/modals/modals.component';
 
 @Component({
   selector: 'app-order-add',
@@ -15,7 +15,6 @@ import {ModalsComponent} from "../../shared/modals/modals.component";
 })
 export class OrderAddComponent implements OnInit {
   cinemaForm: FormGroup;
-  list;
   line;
   seat;
   seats = [];
@@ -31,9 +30,9 @@ export class OrderAddComponent implements OnInit {
 
     this.cinemaForm = new FormGroup({
       sector: new FormControl([], Validators.required),
-      category: new FormControl({value: '', disabled: true}, Validators.required),
-      line: new FormControl({value: '', disabled: true}, Validators.required),
-      seat: new FormControl({value: '', disabled: true}, Validators.required)
+      category: new FormControl([], Validators.required),
+      line: new FormControl([], Validators.required),
+      seat: new FormControl([], Validators.required)
     });
 
   }
@@ -72,44 +71,47 @@ export class OrderAddComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.service.getSectors()
-      .subscribe(sectors => {
-        this.sectors = sectors;
-        console.log(this.sectors);
-      });
+    // берем сектора из сервиса и
+    this.sectors = this.service.getSectors();
 
+    // и подписываемся на обновления всех данных
+    this.service.sectorChanges
+      .subscribe((sectors) => this.sectors = sectors);
+    this.service.categoriesChanges
+      .subscribe((categories) => this.categories = categories);
+    this.service.linesChanges
+      .subscribe((lines) => this.lines = lines);
+    this.service.seatsChanges
+      .subscribe((seats) => this.seats = seats);
+
+    // после выбора сектора вызываем фильтр сервиса
     this.cinemaForm.get('sector').valueChanges
       .do(sector => this.sector = sector)
-      .flatMap(() => this.service.getFilteredSeatsBySector(this.sector.id))
-      .flatMap(() => this.service.getCategories())
-      .subscribe(cat => {
-        this.cinemaForm.get('category').enable();
-        this.cinemaForm.get('category').reset([]);
-        this.categories = cat;
+      .subscribe( () => {
+        this.cinemaForm.get('category').setValue([]);
+        this.cinemaForm.get('line').setValue([]);
+        this.cinemaForm.get('seat').setValue([]);
+        this.service.getFilteredSeatsBySector(this.sector.id);
       });
 
     this.cinemaForm.get('category').valueChanges
       .do(cat => this.category = cat)
-      .flatMap(() => this.service.getLines(this.category.id))
-      .subscribe((lines) => {
-        this.cinemaForm.get('line').enable();
-        this.cinemaForm.get('line').reset([]);
-        this.lines = lines;
-        console.log(this.lines);
+      .subscribe( () => {
+        this.cinemaForm.get('line').setValue([]);
+        this.cinemaForm.get('seat').setValue([]);
+        this.service.getLines(this.category.id);
       });
 
     this.cinemaForm.get('line').valueChanges
       .do(line => this.line = line)
       .subscribe(() => {
-        this.seats = this.service.getSeats(this.line.id);
-        this.cinemaForm.get('seat').enable();
-        this.cinemaForm.get('seat').reset([]);
+        this.cinemaForm.get('seat').setValue([]);
+        this.service.getSeats(this.line.id);
       });
 
     this.cinemaForm.get('seat').valueChanges
       .subscribe(seat => {
-        console.log(seat);
-        this.seat = seat
+        this.seat = seat;
       });
 
   }

@@ -1,5 +1,6 @@
-import {Injectable} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Subject } from 'rxjs/Subject';
 import 'rxjs/add/observable/throw';
 // Operators
 import 'rxjs/add/operator/map';
@@ -7,76 +8,77 @@ import 'rxjs/add/operator/map';
 @Injectable()
 export class PlaceService {
 
+  sectorChanges = new Subject<any>();
+  categoriesChanges = new Subject<any>();
+  linesChanges = new Subject<any>();
+  seatsChanges = new Subject<any>();
+
   orderedSeats = [];
-  filteredCategories = new Set();
-  filteredLines = new Set();
-  filteredResponse: Array<any>;
+  filteredSeats = [];
 
-  constructor(private http: HttpClient){}
+  categoryList = new Set();
+  linesList = new Set();
+  sectorsList = new Set();
+  seats;
+  lines;
+  sectors;
+  categories;
 
-  private _getSeats(line) {
-    return this.filteredResponse.filter(seat => (seat.line === line && seat.status === 0));
-  }
-
-  private _filterBySector(sector) {
-    this.clearData();
-    return this.http.get('https://syn.su/js/front/data.js').map( (response: any) => {
-      const res = this.objToArray(response.response.seats);
-      this.filteredResponse = res.filter(seat => {
-        if (seat.sector === sector) {
-          this.filteredCategories.add(seat.category);
-          this.filteredLines.add(seat.line);
-          return (seat.sector === sector);
-        }
+  constructor(private http: HttpClient) {
+    this._getSectors()
+      .subscribe((sectors) => {
+        this.sectors = sectors;
+        this.sectorChanges.next(this.sectors);
       });
-      return this.filteredResponse;
-    });
   }
 
-  private _filterByCategory() {
-    return this.http.get('https://syn.su/js/front/data.js').map( (response: any) => {
-      console.log(response.response.categories);
-      const cat = this.objToArray(response.response.categories);
-      let filteredResponse;
-
-      filteredResponse = cat.filter(category => {
-        return this.filteredCategories.has(category.id);
-      });
-
-      console.log(filteredResponse);
-      return filteredResponse;
-    });
-  }
-
-  private _filterLinesByCategory(cat) {
-    return this.http.get('https://syn.su/js/front/data.js').map( (response: any) => {
-      const lines = this.objToArray(response.response.lines);
-      let filteredLinesByCategory;
-      const filteredLinesSet = new Set();
-
-      this.filteredResponse.filter((seat) => {
-        if (this.filteredLines.has(seat.line) && seat.category === cat) {
-          filteredLinesSet.add(seat.line);
-          return seat.category === cat;
-        }
-      });
-
-      filteredLinesByCategory = lines.filter(line => filteredLinesSet.has(line.id));
-      return filteredLinesByCategory;
-    });
-  }
-
+  // получаем данные с сервера и записываем
   private _getSectors() {
     return this.http.get('https://syn.su/js/front/data.js').map( (response: any) => {
-      return this.objToArray(response.response.sectors);
+      // сразу фильтруем список сектора от пустых
+      this.seats = this.objToArray(response.response.seats)
+        .filter(seat => {
+          this.sectorsList.add(seat.sector);
+          return seat.status === 0;
+        });
+      this.sectors = this.objToArray(response.response.sectors)
+        .filter(sector => this.sectorsList.has(sector.id));
+
+      this.lines = this.objToArray(response.response.lines);
+      this.categories = this.objToArray(response.response.categories);
+      return this.sectors;
     });
   }
 
-  private clearData() {
-    this.orderedSeats = [];
-    this.filteredCategories = new Set();
-    this.filteredLines = new Set();
-    this.filteredResponse = [];
+  // фильтруем список по сектору
+  public _filterBySector(sector) {
+    this.categoryList.clear();
+    this.filteredSeats = this.seats.filter(seat => {
+      if (seat.sector === sector) {
+        console.log(seat.category);
+        this.categoryList.add(seat.category);
+        return true;
+      }
+    });
+    this.categoriesChanges.next(this.categories.filter(cat => this.categoryList.has(cat.id)));
+  }
+  // фильтруем по категории
+  public _filterByCategory(cat) {
+    this.linesList.clear();
+
+    const lines = this.filteredSeats.filter(seat => {
+      if (seat.category === cat) {
+        this.linesList.add(seat.line);
+        return seat.category === cat;
+      }
+    });
+
+    this.linesChanges.next(this.lines.filter(line => this.linesList.has(line.id)));
+  }
+  // фильтруем по ряду
+  private _filterByLine(line) {
+    this.seatsChanges.next(this.filteredSeats.filter(seat => seat.line === line));
+    console.log(this.filteredSeats.filter(seat => seat.line === line));
   }
 
   private objToArray(obj): Array<any> {
@@ -87,23 +89,21 @@ export class PlaceService {
   }
 
   getFilteredSeatsBySector(sector) {
-    return this._filterBySector(sector);
+    this._filterBySector(sector);
   }
 
   getSeats(line) {
-    return this._getSeats(line);
+    this._filterByLine(line);
   }
 
   getSectors() {
-   return this._getSectors();
-  }
-
-  getCategories() {
-    return this._filterByCategory();
+    if (this.sectors) {
+      return this.sectors.slice();
+    }
   }
 
   getLines(cat) {
-    return this._filterLinesByCategory(cat);
+    this._filterByCategory(cat);
   }
 
   addToBasket(ticket) {
